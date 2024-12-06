@@ -1,0 +1,54 @@
+/*
+AREAMNY JEANTON
+CI: 28.019.557
+DOCENTE: JULIO CASTILLO
+MATERIA: BASES DE DATOS II
+*/
+
+-- SE CREA LA BASE DE DATOS
+DROP DATABASE biblioteca;
+CREATE DATABASE IF NOT EXISTS biblioteca;
+USE biblioteca;
+
+-- CREAMOS LA TABLA DE LIBROS
+CREATE TABLE IF NOT EXISTS Libros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    autor VARCHAR(255) NOT NULL,
+    precio DECIMAL(10, 2) NOT NULL,
+    editorial VARCHAR(255) NOT NULL
+)engine = InnoDB;
+
+-- CREAMOS LA TABLA DE CONTROL
+CREATE TABLE IF NOT EXISTS Control (
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario VARCHAR(50) NOT NULL,
+    id_libro INT NOT NULL,
+    nuevo_precio DECIMAL(10, 2) NOT NULL,
+    precio_anterior DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (id_libro) REFERENCES Libros(id) ON DELETE CASCADE
+)engine = InnoDB;
+
+-- SE CREA EL TRIGGER PARA LA AUDITORÍA
+DELIMITER $$
+
+CREATE TRIGGER auditoria_precios
+BEFORE UPDATE ON Libros
+FOR EACH ROW
+BEGIN
+    -- SE VERIFICA SI EL PRECIO HA CAMBIADO
+    IF OLD.precio <> NEW.precio THEN
+        INSERT INTO Control (usuario, id_libro, nuevo_precio, precio_anterior)
+        VALUES (USER(), OLD.id, NEW.precio, OLD.precio);
+    END IF;
+END $$
+
+DELIMITER ;
+
+-- INSERTAMOS UN VALOR PARA COMPROBAR EL FUNCIONAMIENTO
+INSERT INTO Libros (titulo, autor, precio, editorial) VALUES ('El Gato Negro', 'Edgar Alla Poe', 100, 'Minotauro');
+SELECT * FROM Libros;
+
+-- HACEMOS UPDATE PARA VERIFICAR
+UPDATE Libros SET precio = 300 WHERE id = 1;
+SELECT * FROM Control;
